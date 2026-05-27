@@ -6,7 +6,11 @@ from qa_framework_generator.state import GeneratedFile, ValidationResult
 
 try:
     from deepeval.metrics import GEval
-    from deepeval.test_case import LLMTestCase, LLMTestCaseParams
+    from deepeval.test_case import LLMTestCase
+    try:
+        from deepeval.test_case import SingleTurnParams as _EvalParams
+    except ImportError:
+        from deepeval.test_case import LLMTestCaseParams as _EvalParams  # type: ignore[no-redef]
     _DEEPEVAL_AVAILABLE = True
 except ImportError:
     _DEEPEVAL_AVAILABLE = False  # type: ignore[assignment]
@@ -37,7 +41,7 @@ def _make_geval(name: str, criteria: str, threshold: float) -> "GEval":
     return GEval(
         name=name,
         criteria=criteria,
-        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+        evaluation_params=[_EvalParams.INPUT, _EvalParams.ACTUAL_OUTPUT],
         threshold=threshold,
         model=os.getenv("OPENAI_MODEL", "gpt-4.1"),
     )

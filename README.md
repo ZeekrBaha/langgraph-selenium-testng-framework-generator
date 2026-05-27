@@ -272,7 +272,8 @@ git clone <repo>
 cd langgraph-selenium-testng-framework-generator
 
 # Install all dependencies (includes deepeval)
-uv sync --extra dev
+uv sync
+uv pip install -e ".[dev]"
 
 # Configure API key
 cp .env.example .env
@@ -296,7 +297,7 @@ cp .env.example .env
 ### Generate a framework (full LangGraph pipeline)
 
 ```bash
-uv run python -m qa_framework_generator \
+uv run qa-framework-generator \
   --config examples/ecommerce_demo.yaml \
   --output selenium-testng-framework-output
 ```
@@ -304,7 +305,7 @@ uv run python -m qa_framework_generator \
 ### Generate without LLM (static templates only — no API key needed)
 
 ```bash
-uv run python -m qa_framework_generator \
+uv run qa-framework-generator \
   --config examples/ecommerce_demo.yaml \
   --output selenium-testng-framework-output \
   --skip-llm
@@ -313,7 +314,7 @@ uv run python -m qa_framework_generator \
 ### Adjust DeepEval quality threshold (default 0.7)
 
 ```bash
-uv run python -m qa_framework_generator \
+uv run qa-framework-generator \
   --config examples/ecommerce_full.yaml \
   --output selenium-testng-framework-output \
   --eval-threshold 0.8
@@ -442,7 +443,7 @@ No code changes required — the same generated framework runs locally or on any
 - [x] Maven validator mocks subprocess for `mvn compile` and `mvn test smoke`
 - [x] Repair loop increments attempt count; deterministic Thread.sleep fixer
 - [x] Generated Java project: `mvn -q -DskipTests compile` → **BUILD SUCCESS**
-- [x] 138 Python unit tests passing
+- [x] Python unit tests passing
 
 ### Milestone 2 acceptance
 - [x] `requirements_node` — LLM normalises YAML config into structured requirements
@@ -462,8 +463,17 @@ No code changes required — the same generated framework runs locally or on any
 - [x] CI YAML validation in `validate_static`
 - [x] Extent Report existence check after test run
 - [x] Stale generated file auto-cleanup between runs
-- [x] `examples/ecommerce_full.yaml` — login, search, cart, checkout flows
-- [x] 147 Python unit tests passing
+- [x] `examples/ecommerce_full.yaml` — login, search, cart, checkout flows (5 pages, 3 flows, verified end-to-end)
+- [x] 163 Python unit tests passing
+
+### Post-milestone fixes
+- [x] **Method name casing** — `upper_first` Jinja2 filter preserves camelCase in generated method names (`clickResultItems()` not `clickResultitems()`)
+- [x] **Eval repair routing** — `_resolve_failure_path` maps `eval_page_object_X` / `eval_test_class_X` failures to the correct Java file for LLM repair
+- [x] **DeepEval unavailable warning** — when deepeval is not installed, a named `ValidationResult(passed=True)` is returned instead of a silent empty list; visible in report, doesn't block routing
+- [x] **`with_structured_output` method** — all LLM nodes use `method="function_calling"` to avoid OpenAI strict schema rejection of `dict[str, Any]` fields
+- [x] **Stale cleanup safety** — `cleanup=False` flag added to `write_files`; `final_report_node` no longer deletes all generated source files after Maven compiles them
+- [x] **CLI entry point** — `[project.scripts]` added to `pyproject.toml` so `qa-framework-generator` installs as a proper CLI command
+- [x] **DeepEval API** — migrated from deprecated `LLMTestCaseParams` to `SingleTurnParams` (deepeval 4.x)
 
 ---
 
