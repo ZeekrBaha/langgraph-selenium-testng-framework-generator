@@ -20,7 +20,12 @@ You describe your target application (pages, flows, environments, browsers). The
 | `ExtentReportListener.java` | One HTML report per run, attached to failing tests |
 | Page objects | LLM-generated from your `pages:` config — By locators, interaction methods |
 | Test classes | LLM-generated from your `flows:` config — TestNG groups, assertions, no raw WebDriver |
-| `testng.xml` | Suite config with parallel class/method execution |
+| `BaseApiTest.java` | REST Assured base: pre-configured `RequestSpecification`, reusable `get/post/put/patch/delete` helpers, `assertStatus()` |
+| `JsonPlaceholderCrudTest.java` | Full CRUD demo against JSONPlaceholder: GET list, GET by id, POST, PUT, PATCH, DELETE, 404 edge case |
+| `Post.java` | Jackson-annotated POJO model for JSONPlaceholder `/posts` resource |
+| `DbHelper.java` | Spring JdbcTemplate wrapper: `queryForObject`, `queryForList`, `queryForOptional`, `count`, `countWhere`, `exists`, `update`, `execute`, `truncate` |
+| `DbSampleTest.java` | H2 in-memory DB demo: CREATE/INSERT/SELECT/DELETE via DbHelper — no external DB required |
+| `testng.xml` | Suite config: Smoke/Regression/API/DB suites with parallel execution |
 | `log4j2.xml` | Log4j 2 config: DEBUG for project package to console + rolling file (`target/logs/`); WARN for everything else |
 | `.github/workflows/ui-tests.yml` | GitHub Actions: Java 17, headless Chrome, Maven cache, artifact upload |
 | `GENERATION_REPORT.md` | File list, validation results, DeepEval scores, repair attempts |
@@ -134,6 +139,10 @@ com.example.qa/
 ├── config/
 │   ├── ConfigLoader.java      ← Reads env.properties per -Denv flag
 │   └── EnvConfig.java         ← Typed environment values (baseUrl, etc.)
+├── models/
+│   └── Post.java              ← Jackson POJO for JSONPlaceholder /posts
+├── db/
+│   └── DbHelper.java          ← Spring JdbcTemplate wrapper for DB assertions
 ├── listeners/
 │   ├── TestListener.java      ← ITestListener: lifecycle log + screenshot on fail
 │   ├── ExtentReportListener.java
@@ -146,8 +155,12 @@ com.example.qa/
 │   └── ScreenshotUtil.java    ← Deterministic path: target/screenshots/{test}.png
 ├── pages/                     ← LLM-generated from pages: in YAML
 │   └── HomePage.java
-└── tests/                     ← LLM-generated from flows: in YAML
-    └── SmokeTest.java
+├── tests/                     ← LLM-generated from flows: in YAML
+│   └── SmokeTest.java
+├── api/                       ← REST Assured CRUD tests
+│   └── JsonPlaceholderCrudTest.java   ← GET/POST/PUT/PATCH/DELETE + 404 edge case
+└── db/                        ← Spring JDBC DB validation tests
+    └── DbSampleTest.java      ← H2 in-memory demo: count, query, insert, delete
 ```
 
 ---
@@ -177,6 +190,9 @@ com.example.qa/
 | Language | Java 17 |
 | Browser automation | Selenium WebDriver 4 |
 | Remote execution | Selenium Grid (via `-Dgrid.url`) |
+| API testing | REST Assured 5 (full CRUD, `BaseApiTest` helpers) |
+| DB validation | Spring JDBC 6 / JdbcTemplate (`DbHelper` wrapper) |
+| In-memory DB | H2 2.2 (zero-config DB tests out of the box) |
 | Test runner | TestNG 7 |
 | Driver management | WebDriverManager |
 | Reporting | Extent Reports 5 |
@@ -227,6 +243,11 @@ langgraph-selenium-testng-framework-generator/
 │       │   ├── testng.xml.j2
 │       │   ├── log4j2.xml.j2
 │       │   ├── env.properties.j2
+│       │   ├── BaseApiTest.java.j2
+│       │   ├── Post.java.j2
+│       │   ├── JsonPlaceholderCrudTest.java.j2
+│       │   ├── DbHelper.java.j2
+│       │   ├── DbSampleTest.java.j2
 │       │   ├── README.md.j2
 │       │   ├── gitignore.j2
 │       │   └── github-actions.yml.j2
@@ -236,7 +257,9 @@ langgraph-selenium-testng-framework-generator/
 │           ├── page_object_system.md
 │           ├── test_case_system.md
 │           ├── review_system.md
-│           └── repair_system.md
+│           ├── repair_system.md
+│           ├── api_test_system.md    ← LLM prompt for REST Assured reusable methods
+│           └── db_test_system.md     ← LLM prompt for DbHelper test utilities
 ├── tests/
 │   ├── test_config.py
 │   ├── test_graph_routes.py
@@ -350,6 +373,36 @@ mvn test -Dgrid.url=http://localhost:4444/wd/hub -Dgroups=smoke -Dheadless=true
 
 # Retry flaky tests up to 2 times
 mvn test -Dretry.count=2 -Dgroups=regression
+```
+
+### Run API tests (REST Assured / JSONPlaceholder)
+
+```bash
+cd selenium-testng-framework-output
+
+# Run all API tests
+mvn test -Dgroups=api
+
+# Run API smoke tests only
+mvn test -Dgroups=api,smoke
+
+# Run full API regression
+mvn test -Dgroups=api,regression
+```
+
+### Run DB tests (Spring JDBC / H2 in-memory)
+
+```bash
+cd selenium-testng-framework-output
+
+# Run against H2 in-memory (default — no external DB needed)
+mvn test -Dgroups=db
+
+# Run against an external DB
+mvn test -Dgroups=db \
+  -Ddb.url=jdbc:mysql://localhost:3306/qa_db \
+  -Ddb.username=qa \
+  -Ddb.password=secret
 ```
 
 ### Run generator tests
@@ -519,6 +572,13 @@ No code changes required — the same generated framework runs locally or on any
 
 ### Post-milestone fixes (batch 3)
 - [x] **Log4j 2 logging** — replaced Logback with Log4j 2 (`log4j-api`, `log4j-core`, `log4j-slf4j2-impl 2.23.1`) as the SLF4J binding; `BaseTest` logs browser/URL on setup and pass/fail on teardown; `BasePage` exposes `log` field on every page object; `log4j2.xml` configures DEBUG console + rolling file appender to `target/logs/` for the project package
+
+### Post-milestone fixes (batch 4)
+- [x] **REST Assured CRUD tests** — added `rest-assured 5.4.0` + `jackson-databind 2.17.1`; `BaseApiTest` provides pre-configured `RequestSpecification` and reusable `get/post/put/patch/delete/assertStatus` helpers; `JsonPlaceholderCrudTest` covers full CRUD (GET list, GET by id, POST, PUT, PATCH, DELETE, 404) against [JSONPlaceholder](https://jsonplaceholder.typicode.com)
+- [x] **Spring JDBC DbHelper** — added `spring-jdbc 6.1.10` + `h2 2.2.224`; `DbHelper` wraps `JdbcTemplate` with `queryForObject`, `queryForOptional`, `queryForList`, `count`, `countWhere`, `exists`, `update`, `execute`, `truncate`; `DbSampleTest` demonstrates all helpers against H2 in-memory DB (zero external setup); `DbHelper.fromSystemProperties()` reads `-Ddb.url/-Ddb.username/-Ddb.password` for real DB override
+- [x] **testng.xml API + DB suites** — added `<test name="API">` and `<test name="DB">` suites alongside Smoke/Regression; all four suites include the `.api` and `.db` packages for group-filtered execution
+- [x] **LLM prompt templates** — `api_test_system.md` and `db_test_system.md` document rules for generating reusable REST Assured and DbHelper test methods (CRUD coverage templates, reusable helper patterns, DataProvider usage, assertion rules, anti-patterns)
+- [x] **34 files generated** (up from 29 before REST Assured / Spring JDBC)
 
 ---
 

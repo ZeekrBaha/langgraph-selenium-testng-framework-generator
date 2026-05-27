@@ -106,16 +106,24 @@ def render_static_templates(config: FrameworkConfig) -> list[GeneratedFile]:
         (f"{main}/listeners/ExtentManager.java", "ExtentManager.java.j2"),
         (f"{main}/listeners/ExtentTestManager.java", "ExtentTestManager.java.j2"),
         (f"{main}/utils/ScreenshotUtil.java", "ScreenshotUtil.java.j2"),
+        # REST Assured + DB utilities
+        (f"{main}/models/Post.java", "Post.java.j2"),
+        (f"{main}/db/DbHelper.java", "DbHelper.java.j2"),
     ]:
         files.append(GeneratedFile(path=path, kind="java", content=_render(env, tpl, ctx)))
 
     # Test sources — TestNG-dependent classes and test base
     for path, tpl in [
         (f"{test}/base/BaseTest.java", "BaseTest.java.j2"),
+        (f"{test}/base/BaseApiTest.java", "BaseApiTest.java.j2"),
         (f"{test}/listeners/TestListener.java", "TestListener.java.j2"),
         (f"{test}/listeners/ExtentReportListener.java", "ExtentReportListener.java.j2"),
         (f"{test}/retry/RetryAnalyzer.java", "RetryAnalyzer.java.j2"),
         (f"{test}/retry/RetryTransformer.java", "RetryTransformer.java.j2"),
+        # REST Assured CRUD demo tests
+        (f"{test}/api/JsonPlaceholderCrudTest.java", "JsonPlaceholderCrudTest.java.j2"),
+        # Spring JDBC / H2 demo tests
+        (f"{test}/db/DbSampleTest.java", "DbSampleTest.java.j2"),
     ]:
         files.append(GeneratedFile(path=path, kind="java", content=_render(env, tpl, ctx)))
 

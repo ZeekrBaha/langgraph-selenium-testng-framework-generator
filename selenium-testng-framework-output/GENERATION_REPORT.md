@@ -3,7 +3,7 @@
 **Status:** done
 **Output:** selenium-testng-framework-output
 **Package:** com.generated.shopqa
-**Repair attempts:** 0
+**Repair attempts:** 1
 
 ## Files Generated
 
@@ -23,11 +23,16 @@
 - `src/main/java/com/generated/shopqa/listeners/ExtentManager.java`
 - `src/main/java/com/generated/shopqa/listeners/ExtentTestManager.java`
 - `src/main/java/com/generated/shopqa/utils/ScreenshotUtil.java`
+- `src/main/java/com/generated/shopqa/models/Post.java`
+- `src/main/java/com/generated/shopqa/db/DbHelper.java`
 - `src/test/java/com/generated/shopqa/base/BaseTest.java`
+- `src/test/java/com/generated/shopqa/base/BaseApiTest.java`
 - `src/test/java/com/generated/shopqa/listeners/TestListener.java`
 - `src/test/java/com/generated/shopqa/listeners/ExtentReportListener.java`
 - `src/test/java/com/generated/shopqa/retry/RetryAnalyzer.java`
 - `src/test/java/com/generated/shopqa/retry/RetryTransformer.java`
+- `src/test/java/com/generated/shopqa/api/JsonPlaceholderCrudTest.java`
+- `src/test/java/com/generated/shopqa/db/DbSampleTest.java`
 - `src/test/java/com/generated/shopqa/pages/LoginPage.java`
 - `src/test/java/com/generated/shopqa/pages/HomePage.java`
 - `src/test/java/com/generated/shopqa/pages/SearchResultsPage.java`

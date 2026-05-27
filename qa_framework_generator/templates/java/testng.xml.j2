@@ -18,6 +18,8 @@
         </groups>
         <packages>
             <package name="{{ base_package }}.tests"/>
+            <package name="{{ base_package }}.api"/>
+            <package name="{{ base_package }}.db"/>
         </packages>
     </test>
 
@@ -29,6 +31,30 @@
         </groups>
         <packages>
             <package name="{{ base_package }}.tests"/>
+            <package name="{{ base_package }}.api"/>
+            <package name="{{ base_package }}.db"/>
+        </packages>
+    </test>
+
+    <test name="API">
+        <groups>
+            <run>
+                <include name="api"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="{{ base_package }}.api"/>
+        </packages>
+    </test>
+
+    <test name="DB">
+        <groups>
+            <run>
+                <include name="db"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="{{ base_package }}.db"/>
         </packages>
     </test>
 

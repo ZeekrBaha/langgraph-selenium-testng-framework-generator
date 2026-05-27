@@ -1,0 +1,129 @@
+package {{ base_package }}.api;
+
+import {{ base_package }}.base.BaseApiTest;
+import {{ base_package }}.models.Post;
+import io.restassured.response.Response;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import static org.hamcrest.Matchers.*;
+
+/**
+ * CRUD tests against the public JSONPlaceholder API (https://jsonplaceholder.typicode.com).
+ * Demonstrates REST Assured helpers from BaseApiTest.
+ */
+public class JsonPlaceholderCrudTest extends BaseApiTest {
+
+    private static final String BASE_URI = "https://jsonplaceholder.typicode.com";
+
+    @Override
+    protected String getBaseUri() {
+        return BASE_URI;
+    }
+
+    // --- READ (GET) ---
+
+    @Test(groups = {"api", "smoke"},
+          description = "GET /posts returns HTTP 200 and a non-empty list")
+    public void getAllPostsReturns200() {
+        Response response = get("/posts");
+        assertStatus(response, 200);
+        Assert.assertTrue(response.jsonPath().getList("$").size() > 0,
+                "Response should contain at least one post");
+    }
+
+    @Test(groups = {"api", "smoke"},
+          description = "GET /posts/1 returns the correct resource")
+    public void getSinglePostById() {
+        get("/posts/{id}", 1)
+            .then()
+                .statusCode(200)
+                .body("id", equalTo(1))
+                .body("userId", notNullValue())
+                .body("title", not(emptyOrNullString()))
+                .body("body", not(emptyOrNullString()));
+    }
+
+    @Test(groups = {"api", "regression"},
+          description = "GET /posts?userId=1 returns only posts for that user")
+    public void getPostsByUserIdFilter() {
+        Response response = given(requestSpec)
+            .queryParam("userId", 1)
+            .when().get("/posts")
+            .then().statusCode(200).extract().response();
+
+        int count = response.jsonPath().getList("$").size();
+        Assert.assertTrue(count > 0, "userId=1 should return at least one post");
+        // verify every returned post belongs to userId=1
+        response.jsonPath().getList("userId", Integer.class)
+                .forEach(uid -> Assert.assertEquals((int) uid, 1, "All posts should belong to userId=1"));
+    }
+
+    // --- CREATE (POST) ---
+
+    @Test(groups = {"api", "regression"},
+          description = "POST /posts creates a new resource and returns HTTP 201")
+    public void createPostReturns201() {
+        Post newPost = new Post(1, "Automated Test Post", "Created by REST Assured framework test.");
+
+        Response response = post("/posts", newPost);
+        assertStatus(response, 201);
+
+        Integer createdId = response.jsonPath().getInt("id");
+        Assert.assertNotNull(createdId, "Created post must have an id");
+        Assert.assertTrue(createdId > 0, "Created post id should be positive");
+        Assert.assertEquals(response.jsonPath().getString("title"), "Automated Test Post");
+
+        log.info("Created post with id={}", createdId);
+    }
+
+    // --- UPDATE (PUT) ---
+
+    @Test(groups = {"api", "regression"},
+          description = "PUT /posts/1 replaces the resource and returns HTTP 200")
+    public void updatePostWithPut() {
+        Post updated = new Post(1, "Updated Title via PUT", "Replaced body via PUT.");
+        updated.id = 1;
+
+        Response response = put("/posts/1", updated);
+        assertStatus(response, 200);
+
+        Assert.assertEquals(response.jsonPath().getInt("id"), 1);
+        Assert.assertEquals(response.jsonPath().getString("title"), "Updated Title via PUT");
+    }
+
+    // --- PARTIAL UPDATE (PATCH) ---
+
+    @Test(groups = {"api", "regression"},
+          description = "PATCH /posts/1 partially updates the resource and returns HTTP 200")
+    public void patchPostTitle() {
+        String patchBody = "{\"title\": \"Patched Title\"}";
+
+        given(requestSpec)
+            .body(patchBody)
+            .when().patch("/posts/1")
+            .then()
+                .statusCode(200)
+                .body("id", equalTo(1))
+                .body("title", equalTo("Patched Title"));
+    }
+
+    // --- DELETE ---
+
+    @Test(groups = {"api", "regression"},
+          description = "DELETE /posts/1 returns HTTP 200")
+    public void deletePostReturns200() {
+        Response response = delete("/posts/1");
+        assertStatus(response, 200);
+        log.info("DELETE /posts/1 completed with status={}", response.getStatusCode());
+    }
+
+    // --- EDGE CASES ---
+
+    @Test(groups = {"api", "regression"},
+          description = "GET /posts/99999 returns HTTP 404 for non-existent resource")
+    public void getNonExistentPostReturns404() {
+        Response response = get("/posts/{id}", 99999);
+        assertStatus(response, 404);
+    }
+}
