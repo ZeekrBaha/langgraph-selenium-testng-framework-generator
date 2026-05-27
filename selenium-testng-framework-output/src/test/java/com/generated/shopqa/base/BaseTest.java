@@ -32,4 +32,16 @@ public abstract class BaseTest {
         }
         DriverFactory.quitDriver();
     }
+
+    protected String getCurrentUrl() {
+        return driver.getCurrentUrl();
+    }
+
+    protected String getTitle() {
+        return driver.getTitle();
+    }
+
+    protected String getPageSource() {
+        return driver.getPageSource();
+    }
 }

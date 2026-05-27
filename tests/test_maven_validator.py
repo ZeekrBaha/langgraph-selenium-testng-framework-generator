@@ -10,14 +10,14 @@ def make_proc(returncode: int = 0, stdout: str = "", stderr: str = "") -> MagicM
     return m
 
 
-# --- compile ---
+# --- compile (now runs test-compile) ---
 
-def test_compile_command_is_correct():
+def test_compile_command_is_test_compile():
     from qa_framework_generator.validators import validate_maven_compile
     with patch("subprocess.run") as mock_run:
         mock_run.return_value = make_proc(0)
         validate_maven_compile("/tmp/output")
-        assert mock_run.call_args[0][0] == ["mvn", "-q", "-DskipTests", "compile"]
+        assert mock_run.call_args[0][0] == ["mvn", "-q", "-DskipTests", "test-compile"]
 
 
 def test_compile_uses_output_dir_as_cwd():
@@ -33,7 +33,7 @@ def test_compile_success_returns_passed():
     with patch("subprocess.run", return_value=make_proc(0)):
         result = validate_maven_compile("/tmp/output")
     assert result.passed
-    assert result.name == "maven_compile"
+    assert result.name == "maven_test_compile"
 
 
 def test_compile_failure_returns_failed():

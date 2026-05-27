@@ -41,16 +41,16 @@ def test_static_all_fail_goes_to_repair():
 def test_maven_all_pass_goes_to_review():
     from qa_framework_generator.graph import route_after_maven_validation
     state = make_state(validation_results=[
-        ValidationResult(name="maven_compile", passed=True),
+        ValidationResult(name="maven_test_compile", passed=True),
         ValidationResult(name="maven_smoke", passed=True),
     ])
     assert route_after_maven_validation(state) == "review"
 
 
-def test_maven_compile_fail_goes_to_repair():
+def test_maven_test_compile_fail_goes_to_repair():
     from qa_framework_generator.graph import route_after_maven_validation
     state = make_state(validation_results=[
-        ValidationResult(name="maven_compile", passed=False, output="BUILD FAILURE"),
+        ValidationResult(name="maven_test_compile", passed=False, output="BUILD FAILURE"),
     ])
     assert route_after_maven_validation(state) == "repair"
 
@@ -155,3 +155,35 @@ def test_eval_non_eval_results_ignored_in_routing():
         ValidationResult(name="eval_page_object_HomePage", passed=True),
     ])
     assert route_after_evaluation(state) == "write_files"
+
+
+# --- final_report_node status ---
+
+def test_final_report_sets_done_when_no_failures(tmp_path):
+    from qa_framework_generator.graph import final_report_node
+    state = make_state(
+        output_dir=str(tmp_path),
+        validation_results=[ValidationResult(name="check_pom", passed=True)],
+    )
+    result = final_report_node(state)
+    assert result["status"] == "done"
+
+
+def test_final_report_sets_failed_when_failures_remain(tmp_path):
+    from qa_framework_generator.graph import final_report_node
+    state = make_state(
+        output_dir=str(tmp_path),
+        validation_results=[
+            ValidationResult(name="check_pom", passed=True),
+            ValidationResult(name="maven_test_compile", passed=False, output="BUILD FAILURE"),
+        ],
+    )
+    result = final_report_node(state)
+    assert result["status"] == "failed"
+
+
+def test_final_report_done_with_empty_validations(tmp_path):
+    from qa_framework_generator.graph import final_report_node
+    state = make_state(output_dir=str(tmp_path), validation_results=[])
+    result = final_report_node(state)
+    assert result["status"] == "done"

@@ -148,24 +148,31 @@ def render_test_class(
     step_lines: list[str] = []
     page_vars: list[tuple[str, str]] = []
 
+    def _ensure_page(page_name: str) -> str:
+        """Register page variable if not already seen, return its var name."""
+        if page_name not in pages_seen:
+            pages_seen.append(page_name)
+            page_vars.append((page_name, _lower_first(page_name)))
+        return _lower_first(page_name)
+
     for step in steps:
         action = step.get("action", "")
         target = step.get("target") or ""
         value = step.get("value") or ""
+        step_page = step.get("page") or None  # explicit page override from LLM
 
         if action == "open" and target:
-            if target not in pages_seen:
-                pages_seen.append(target)
-                var = _lower_first(target)
-                page_vars.append((target, var))
+            _ensure_page(target)
             current_page = target
         elif action == "click" and target:
-            var = _lower_first(current_page) if current_page else "page"
-            method = "click" + target[0].upper() + target[1:]
+            active = step_page or current_page
+            var = _ensure_page(active) if active else "page"
+            method = "click" + _upper_first(target)
             step_lines.append(f"{var}.{method}();")
         elif action == "type" and target:
-            var = _lower_first(current_page) if current_page else "page"
-            method = "type" + target[0].upper() + target[1:]
+            active = step_page or current_page
+            var = _ensure_page(active) if active else "page"
+            method = "type" + _upper_first(target)
             step_lines.append(f'{var}.{method}("{value}");')
 
     method_name = _lower_first(class_name) + "Test"

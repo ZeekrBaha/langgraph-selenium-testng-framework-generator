@@ -25,6 +25,7 @@ class TestStep(BaseModel):
     action: str
     target: str | None = None
     value: str | None = None
+    page: str | None = None  # page class that owns the element for click/type steps
 
 
 class TestCaseOutput(BaseModel):

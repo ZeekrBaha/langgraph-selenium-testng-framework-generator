@@ -167,3 +167,86 @@ def test_normal_path_does_not_fail_artifact_check():
     results = validate_static(files)
     artifact_fails = [r for r in failed_results(results) if "artifact" in r.name]
     assert not artifact_fails
+
+
+# --- validate_cross_references ---
+
+def _make_page(class_name: str, methods: list[str]) -> GeneratedFile:
+    method_bodies = "\n".join(
+        f"    public void {m}() {{}}" for m in methods
+    )
+    content = f"public class {class_name} extends BasePage {{\n{method_bodies}\n}}"
+    return make_file(f"src/test/java/com/example/pages/{class_name}.java", content, "java")
+
+
+def _make_test(class_name: str, page_vars: dict[str, str], calls: list[str]) -> GeneratedFile:
+    var_lines = "\n".join(
+        f"    {cls} {var} = new {cls}(driver);" for var, cls in page_vars.items()
+    )
+    call_lines = "\n".join(f"        {c};" for c in calls)
+    content = f"public class {class_name} extends BaseTest {{\n{var_lines}\n{call_lines}\n}}"
+    return make_file(f"src/test/java/com/example/tests/{class_name}.java", content, "java")
+
+
+def test_xref_passes_when_all_methods_exist():
+    from qa_framework_generator.validators import validate_cross_references
+    page = _make_page("HomePage", ["clickSearchButton", "typeSearchInput"])
+    test = _make_test("SmokeTest", {"homePage": "HomePage"}, [
+        "homePage.clickSearchButton()",
+        "homePage.typeSearchInput(\"q\")",
+    ])
+    results = validate_cross_references([page, test])
+    assert not results
+
+
+def test_xref_fails_when_method_missing():
+    from qa_framework_generator.validators import validate_cross_references
+    page = _make_page("HomePage", ["clickSearchButton"])
+    test = _make_test("SmokeTest", {"homePage": "HomePage"}, [
+        "homePage.clickSearchButton()",
+        "homePage.clickNonExistentButton()",
+    ])
+    results = validate_cross_references([page, test])
+    assert len(results) == 1
+    assert results[0].passed is False
+    assert "clickNonExistentButton" in results[0].output
+
+
+def test_xref_ignores_driver_and_assert_calls():
+    from qa_framework_generator.validators import validate_cross_references
+    page = _make_page("HomePage", ["clickSearchButton"])
+    test = _make_test("SmokeTest", {"homePage": "HomePage"}, [
+        "Assert.assertTrue(driver.getCurrentUrl().contains(\"/home\"))",
+    ])
+    results = validate_cross_references([page, test])
+    assert not results
+
+
+def test_xref_cross_page_fails_on_wrong_page():
+    from qa_framework_generator.validators import validate_cross_references
+    home = _make_page("HomePage", ["typeSearchInput", "clickSearchButton"])
+    search = _make_page("SearchResultsPage", ["clickFirstResult"])
+    test = _make_test("SearchTest", {"homePage": "HomePage"}, [
+        "homePage.clickFirstResult()",  # wrong — firstResult is on SearchResultsPage
+    ])
+    results = validate_cross_references([home, search, test])
+    assert len(results) == 1
+    assert "clickFirstResult" in results[0].output
+
+
+def test_xref_no_pages_returns_empty():
+    from qa_framework_generator.validators import validate_cross_references
+    test = _make_test("SmokeTest", {"homePage": "HomePage"}, ["homePage.clickButton()"])
+    results = validate_cross_references([test])
+    assert results == []
+
+
+def test_xref_integrated_into_validate_static():
+    from qa_framework_generator.validators import validate_static
+    page = _make_page("HomePage", ["clickSearchButton"])
+    test = _make_test("SmokeTest", {"homePage": "HomePage"}, [
+        "homePage.clickMissingMethod()",
+    ])
+    results = validate_static([page, test])
+    xref_fails = [r for r in results if "xref" in r.name]
+    assert xref_fails

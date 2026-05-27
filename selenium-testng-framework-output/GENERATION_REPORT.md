@@ -42,7 +42,7 @@
 - ✅ `check_xml_pom.xml`
 - ✅ `check_xml_testng.xml`
 - ✅ `check_yaml_ui-tests.yml`
-- ✅ `maven_compile`
+- ✅ `maven_test_compile`
 
 ## Blueprint
 

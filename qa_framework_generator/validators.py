@@ -122,6 +122,8 @@ def validate_static(
                 fix_hint=f"Fix YAML syntax error in {f.path}",
             ))
 
+    results += validate_cross_references(files)
+
     return results
 
 
@@ -137,11 +139,66 @@ def _run_mvn(cmd: list[str], output_dir: str, name: str) -> ValidationResult:
 
 
 def validate_maven_compile(output_dir: str) -> ValidationResult:
-    return _run_mvn(["mvn", "-q", "-DskipTests", "compile"], output_dir, "maven_compile")
+    """Compile main sources AND test sources. test-compile is a superset of compile."""
+    return _run_mvn(["mvn", "-q", "-DskipTests", "test-compile"], output_dir, "maven_test_compile")
 
 
 def validate_maven_smoke(output_dir: str) -> ValidationResult:
     return _run_mvn(["mvn", "-q", "test", "-Dgroups=smoke", "-Dheadless=true"], output_dir, "maven_smoke")
+
+
+_PUBLIC_METHOD_RE = re.compile(
+    r"public\s+(?:void|String|boolean|int|WebElement|List<[^>]+>)\s+(\w+)\s*\("
+)
+_VAR_DECL_RE = re.compile(r"\b(\w+)\s+(\w+)\s*=\s*new\s+\1\s*\(")
+_METHOD_CALL_RE = re.compile(r"\b(\w+)\.(\w+)\s*\(")
+_SKIP_VARS = frozenset({"driver", "Assert", "System", "Duration", "By", "Keys"})
+
+
+def _extract_public_methods(java_content: str) -> set[str]:
+    return set(_PUBLIC_METHOD_RE.findall(java_content))
+
+
+def validate_cross_references(files: list[GeneratedFile]) -> list[ValidationResult]:
+    """Verify every pageVar.method() call in test files exists on that page class."""
+    page_methods: dict[str, set[str]] = {}
+    for f in files:
+        if "/pages/" in f.path and f.kind == "java":
+            class_name = Path(f.path).stem
+            page_methods[class_name] = _extract_public_methods(f.content)
+
+    if not page_methods:
+        return []
+
+    results: list[ValidationResult] = []
+    for f in files:
+        if "/tests/" not in f.path or f.kind != "java":
+            continue
+
+        var_to_class: dict[str, str] = {}
+        for m in _VAR_DECL_RE.finditer(f.content):
+            var_to_class[m.group(2)] = m.group(1)
+
+        errors: list[str] = []
+        for m in _METHOD_CALL_RE.finditer(f.content):
+            var_name, method_name = m.group(1), m.group(2)
+            if var_name in _SKIP_VARS or var_name not in var_to_class:
+                continue
+            class_name = var_to_class[var_name]
+            if class_name not in page_methods:
+                continue
+            if method_name not in page_methods[class_name]:
+                errors.append(f"{var_name}.{method_name}() — method not found on {class_name}")
+
+        if errors:
+            results.append(ValidationResult(
+                name=f"check_xref_{Path(f.path).name}",
+                passed=False,
+                output="\n".join(errors),
+                fix_hint=f"Add missing methods to page class or fix call in {f.path}",
+            ))
+
+    return results
 
 
 def validate_extent_report(output_dir: str) -> ValidationResult:

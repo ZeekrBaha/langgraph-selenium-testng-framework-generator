@@ -24,7 +24,7 @@ public class LoginSmokeTest extends BaseTest {
         loginPage.clickLoginButton();
         
         
-        Assert.assertTrue(getCurrentUrl().contains("/home"), "URL should contain /home after login");
+        Assert.assertTrue(driver.getCurrentUrl().contains("/home"), "User should be redirected to home page after login");
         
     }
 }

@@ -5,6 +5,8 @@ from pathlib import Path
 
 from qa_framework_generator.state import GeneratedFile, ValidationResult
 
+_COMPILER_ERROR_FILE_RE = re.compile(r"\[ERROR\]\s+(.+\.java):\[")
+
 _SLEEP_RE = re.compile(r"Thread\.sleep\s*\(\s*\d+\s*\)\s*;")
 _SLEEP_REPLACEMENT = "// TODO: blocking sleep removed — replace with explicit WebDriverWait"
 
@@ -54,6 +56,21 @@ def llm_repair_file(
     return file.model_copy(update={"content": corrected})
 
 
+def _files_from_maven_error(output: str, files_map: dict[str, "GeneratedFile"]) -> list[str]:
+    """Parse mvn compiler output to find which generated files contain errors."""
+    found: set[str] = set()
+    for m in _COMPILER_ERROR_FILE_RE.finditer(output):
+        abs_error_path = m.group(1).replace("\\", "/")
+        for path in files_map:
+            norm = path.replace("\\", "/")
+            if abs_error_path.endswith(norm) or norm in abs_error_path:
+                found.add(path)
+    if not found:
+        # Fallback: repair all generated test Java files
+        found = {p for p in files_map if "/tests/" in p and p.endswith(".java")}
+    return list(found)
+
+
 def _find_file_by_class_name(class_name: str, files_map: dict[str, "GeneratedFile"]) -> str | None:
     for suffix in (f"pages/{class_name}.java", f"tests/{class_name}.java"):
         for path in files_map:
@@ -75,10 +92,17 @@ def repair_files(
     fixed_map = {f.path: f for f in fixed}
 
     for failure in non_deterministic:
-        affected_path = _resolve_failure_path(failure.name, fixed_map)
-        if affected_path and affected_path in fixed_map:
-            repaired = llm_repair_file(fixed_map[affected_path], failure)
-            fixed_map[affected_path] = repaired
+        if failure.name in ("maven_compile", "maven_test_compile"):
+            # Compiler errors may span multiple files — parse output for paths
+            affected_paths = _files_from_maven_error(failure.output, fixed_map)
+            for path in affected_paths:
+                repaired = llm_repair_file(fixed_map[path], failure)
+                fixed_map[path] = repaired
+        else:
+            affected_path = _resolve_failure_path(failure.name, fixed_map)
+            if affected_path and affected_path in fixed_map:
+                repaired = llm_repair_file(fixed_map[affected_path], failure)
+                fixed_map[affected_path] = repaired
 
     return list(fixed_map.values())
 
@@ -99,6 +123,7 @@ def _failure_to_path(check_name: str) -> str | None:
         "check_testng_groups_",
         "check_placeholder_locators_",
         "check_no_artifact_",
+        "check_xref_",
     ]
     for prefix in prefixes:
         if check_name.startswith(prefix):

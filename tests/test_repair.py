@@ -205,3 +205,42 @@ def test_repair_files_calls_llm_for_eval_test_class_failure():
         mock_llm.assert_called_once_with(test_file, failure)
 
     assert result[0].content == "// repaired"
+
+
+# --- _files_from_maven_error ---
+
+def test_files_from_maven_error_finds_file_by_abs_path():
+    from qa_framework_generator.repair import _files_from_maven_error
+    test_file = make_file("src/test/java/com/example/tests/SearchTest.java", "public class SearchTest {}")
+    files_map = {test_file.path: test_file}
+    output = "[ERROR] /home/user/project/src/test/java/com/example/tests/SearchTest.java:[24,5] cannot find symbol"
+    result = _files_from_maven_error(output, files_map)
+    assert test_file.path in result
+
+
+def test_files_from_maven_error_fallback_to_all_test_files():
+    from qa_framework_generator.repair import _files_from_maven_error
+    page = make_file("src/test/java/com/example/pages/HomePage.java", "")
+    test = make_file("src/test/java/com/example/tests/SmokeTest.java", "")
+    files_map = {page.path: page, test.path: test}
+    output = "[ERROR] some unrecognised error with no java path"
+    result = _files_from_maven_error(output, files_map)
+    assert test.path in result
+    assert page.path not in result
+
+
+def test_repair_files_handles_maven_test_compile_failure():
+    from unittest.mock import patch
+    from qa_framework_generator.repair import repair_files
+    test_file = make_file("src/test/java/com/example/tests/SmokeTest.java", "public class SmokeTest {}")
+    failure = ValidationResult(
+        name="maven_test_compile",
+        passed=False,
+        output="[ERROR] /abs/src/test/java/com/example/tests/SmokeTest.java:[10,5] cannot find symbol",
+    )
+    repaired = test_file.model_copy(update={"content": "// repaired"})
+
+    with patch("qa_framework_generator.repair.llm_repair_file", return_value=repaired):
+        result = repair_files([test_file], [failure])
+
+    assert result[0].content == "// repaired"

@@ -43,18 +43,20 @@ def static_validate_node(state: GeneratorState) -> dict:
 
 
 def maven_validate_node(state: GeneratorState) -> dict:
-    from qa_framework_generator.validators import validate_maven_compile
-    compile_result = validate_maven_compile(state.output_dir)
-    results = list(state.validation_results) + [compile_result]
+    from qa_framework_generator.validators import validate_maven_compile  # runs test-compile
+    test_compile_result = validate_maven_compile(state.output_dir)
+    results = list(state.validation_results) + [test_compile_result]
     return {"validation_results": results}
 
 
 def final_report_node(state: GeneratorState) -> dict:
     from qa_framework_generator.file_writer import write_files
+    failures = [r for r in state.validation_results if not r.passed]
+    status = "failed" if failures else "done"
     report_content = _build_report(state)
     report_file = GeneratedFile(path="GENERATION_REPORT.md", content=report_content, kind="markdown")
     write_files([report_file], state.output_dir, force=True, cleanup=False)
-    return {"status": "done"}
+    return {"status": status}
 
 
 def _build_report(state: GeneratorState) -> str:

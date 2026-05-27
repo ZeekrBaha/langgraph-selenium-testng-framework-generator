@@ -5,6 +5,10 @@ import com.generated.shopqa.base.BaseTest;
 
 import com.generated.shopqa.pages.HomePage;
 
+import com.generated.shopqa.pages.SearchResultsPage;
+
+import com.generated.shopqa.pages.ProductPage;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -16,19 +20,23 @@ public class SearchAndAddToCartTest extends BaseTest {
         
         HomePage homePage = new HomePage(driver);
         
+        SearchResultsPage searchResultsPage = new SearchResultsPage(driver);
+        
+        ProductPage productPage = new ProductPage(driver);
+        
         
         homePage.typeSearchInput("laptop");
         
         homePage.clickSearchButton();
         
-        homePage.clickFirstResult();
+        searchResultsPage.clickFirstResult();
         
-        homePage.clickAddToCartButton();
+        productPage.clickAddToCartButton();
         
         
-        Assert.assertTrue(driver.getCurrentUrl().contains("/search"), "URL should contain /search after searching.");
+        Assert.assertTrue(driver.getCurrentUrl().contains("/search"), "Should navigate to search results page");
         
-        Assert.assertTrue(driver.getCurrentUrl().contains("/cart"), "URL should contain /cart after adding to cart.");
+        Assert.assertTrue(driver.getCurrentUrl().contains("/cart"), "Should navigate to cart page after adding product");
         
     }
 }
