@@ -82,9 +82,11 @@ def render_static_templates(config: FrameworkConfig) -> list[GeneratedFile]:
     files.append(GeneratedFile(path=".github/workflows/ui-tests.yml", kind="yaml",
                                content=_render(env, "github-actions.yml.j2", ctx)))
 
-    # TestNG suite
+    # TestNG suite + logging config
     files.append(GeneratedFile(path="src/test/resources/testng.xml", kind="xml",
                                content=_render(env, "testng.xml.j2", ctx)))
+    files.append(GeneratedFile(path="src/test/resources/log4j2.xml", kind="xml",
+                               content=_render(env, "log4j2.xml.j2", ctx)))
 
     # Environment properties (one per configured environment)
     for env_name, env_config in config.environments.items():

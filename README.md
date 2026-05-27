@@ -12,8 +12,8 @@ You describe your target application (pages, flows, environments, browsers). The
 |---|---|
 | `pom.xml` | Maven build with locked dependency versions and Surefire config |
 | `DriverFactory.java` | Thread-safe `ThreadLocal<WebDriver>` for Chrome, Firefox, Edge, headless, and **Selenium Grid** |
-| `BaseTest.java` | TestNG lifecycle: `@BeforeMethod(alwaysRun=true)` setup, `@AfterMethod(alwaysRun=true)` teardown, environment loading, listener registration, `getCurrentUrl()` / `getTitle()` helpers |
-| `BasePage.java` | Explicit waits, hover, drag-drop, dropdown, typeAndSubmit, scrollToBottom, countElements |
+| `BaseTest.java` | TestNG lifecycle: `@BeforeMethod(alwaysRun=true)` setup, `@AfterMethod(alwaysRun=true)` teardown, environment loading, Log4j `Logger`, `getCurrentUrl()` / `getTitle()` helpers |
+| `BasePage.java` | Explicit waits, hover, drag-drop, dropdown, typeAndSubmit, scrollToBottom, countElements, Log4j `Logger` |
 | `ConfigLoader.java` | Environment switcher — `mvn test -Denv=qa` selects QA base URLs |
 | `RetryAnalyzer.java` | Automatic retry for flaky tests with configurable attempt count |
 | `TestListener.java` | TestNG listener: lifecycle logging + screenshots on failure |
@@ -21,6 +21,7 @@ You describe your target application (pages, flows, environments, browsers). The
 | Page objects | LLM-generated from your `pages:` config — By locators, interaction methods |
 | Test classes | LLM-generated from your `flows:` config — TestNG groups, assertions, no raw WebDriver |
 | `testng.xml` | Suite config with parallel class/method execution |
+| `log4j2.xml` | Log4j 2 config: DEBUG for project package to console + rolling file (`target/logs/`); WARN for everything else |
 | `.github/workflows/ui-tests.yml` | GitHub Actions: Java 17, headless Chrome, Maven cache, artifact upload |
 | `GENERATION_REPORT.md` | File list, validation results, DeepEval scores, repair attempts |
 
@@ -179,7 +180,7 @@ com.example.qa/
 | Test runner | TestNG 7 |
 | Driver management | WebDriverManager |
 | Reporting | Extent Reports 5 |
-| Logging | SLF4J + Logback |
+| Logging | SLF4J + Log4j 2 (console + rolling file appender) |
 | CI | GitHub Actions |
 
 ---
@@ -224,6 +225,7 @@ langgraph-selenium-testng-framework-generator/
 │       │   ├── PageObject.java.j2
 │       │   ├── TestClass.java.j2
 │       │   ├── testng.xml.j2
+│       │   ├── log4j2.xml.j2
 │       │   ├── env.properties.j2
 │       │   ├── README.md.j2
 │       │   ├── gitignore.j2
@@ -514,6 +516,9 @@ No code changes required — the same generated framework runs locally or on any
 - [x] **Maven failure repair** — `_files_from_maven_error()` parses `[ERROR] /path/to/File.java:[n,m]` lines to find affected files; falls back to all test Java files; repair loop now actually fixes compilation errors
 - [x] **`alwaysRun = true` on `@BeforeMethod` / `@AfterMethod`** — without this flag TestNG skips setup/teardown when running with `-Dgroups=smoke`, leaving `driver` null; adding `alwaysRun = true` guarantees lifecycle methods always execute regardless of group filter
 - [x] **175 Python unit tests passing** (+12 new: cross-ref validator ×6, final-report status ×3, maven repair ×3)
+
+### Post-milestone fixes (batch 3)
+- [x] **Log4j 2 logging** — replaced Logback with Log4j 2 (`log4j-api`, `log4j-core`, `log4j-slf4j2-impl 2.23.1`) as the SLF4J binding; `BaseTest` logs browser/URL on setup and pass/fail on teardown; `BasePage` exposes `log` field on every page object; `log4j2.xml` configures DEBUG console + rolling file appender to `target/logs/` for the project package
 
 ---
 

@@ -1,5 +1,7 @@
 package {{ base_package }}.base;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.WebDriver;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
@@ -10,24 +12,31 @@ import {{ base_package }}.utils.ScreenshotUtil;
 
 public abstract class BaseTest {
 
+    protected static final Logger log = LogManager.getLogger(BaseTest.class);
     protected WebDriver driver;
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() {
         String browser = System.getProperty("browser", "chrome");
         boolean headless = Boolean.parseBoolean(System.getProperty("headless", "true"));
+        log.info("Starting browser={} headless={}", browser, headless);
         DriverFactory.createDriver(browser, headless);
         driver = DriverFactory.getDriver();
 
         String env = System.getProperty("env", "qa");
         ConfigLoader.load(env);
-        driver.get(ConfigLoader.getBaseUrl());
+        String baseUrl = ConfigLoader.getBaseUrl();
+        log.info("Navigating to base URL: {}", baseUrl);
+        driver.get(baseUrl);
     }
 
     @AfterMethod(alwaysRun = true)
     public void tearDown(ITestResult result) {
         if (result.getStatus() == ITestResult.FAILURE) {
+            log.error("Test FAILED: {}", result.getName());
             ScreenshotUtil.capture(driver, result.getName());
+        } else {
+            log.info("Test PASSED: {}", result.getName());
         }
         DriverFactory.quitDriver();
     }

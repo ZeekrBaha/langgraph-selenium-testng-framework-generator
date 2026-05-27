@@ -12,6 +12,7 @@
 - `README.md`
 - `.github/workflows/ui-tests.yml`
 - `src/test/resources/testng.xml`
+- `src/test/resources/log4j2.xml`
 - `src/test/resources/env/dev.properties`
 - `src/test/resources/env/qa.properties`
 - `src/test/resources/env/prod.properties`
@@ -36,11 +37,12 @@
 - `src/test/java/com/generated/shopqa/tests/SearchAndAddToCartTest.java`
 - `src/test/java/com/generated/shopqa/tests/CartCheckoutTest.java`
 
-## Validation — 5 passed / 0 failed
+## Validation — 6 passed / 0 failed
 
 - ✅ `check_pom_xml_exists`
 - ✅ `check_xml_pom.xml`
 - ✅ `check_xml_testng.xml`
+- ✅ `check_xml_log4j2.xml`
 - ✅ `check_yaml_ui-tests.yml`
 - ✅ `maven_test_compile`
 

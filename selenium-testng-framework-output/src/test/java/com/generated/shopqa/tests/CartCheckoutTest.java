@@ -22,7 +22,7 @@ public class CartCheckoutTest extends BaseTest {
         
         Assert.assertTrue(driver.getTitle().contains("Cart"), "Page title should contain 'Cart'");
         
-        Assert.assertTrue(driver.getCurrentUrl().contains("/checkout"), "URL should contain '/checkout' after clicking checkout");
+        Assert.assertTrue(getCurrentUrl().contains("/checkout"), "URL should contain '/checkout' after clicking checkout");
         
     }
 }

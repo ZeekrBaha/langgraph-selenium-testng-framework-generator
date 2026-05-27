@@ -34,9 +34,9 @@ public class SearchAndAddToCartTest extends BaseTest {
         productPage.clickAddToCartButton();
         
         
-        Assert.assertTrue(driver.getCurrentUrl().contains("/search"), "Should navigate to search results page");
+        Assert.assertTrue(driver.getCurrentUrl().contains("/search"), "Should navigate to search results page after searching.");
         
-        Assert.assertTrue(driver.getCurrentUrl().contains("/cart"), "Should navigate to cart page after adding product");
+        Assert.assertTrue(driver.getCurrentUrl().contains("/cart"), "Should navigate to cart page after adding product to cart.");
         
     }
 }
