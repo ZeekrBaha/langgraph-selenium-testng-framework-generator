@@ -31,6 +31,10 @@ def _lower_first(s: str) -> str:
     return s[0].lower() + s[1:] if s else s
 
 
+def _upper_first(s: str) -> str:
+    return s[0].upper() + s[1:] if s else s
+
+
 def _jinja_env() -> Environment:
     env = Environment(
         loader=FileSystemLoader(str(_TEMPLATES_DIR)),
@@ -39,6 +43,7 @@ def _jinja_env() -> Environment:
     env.filters["to_by"] = lambda by: _BY_MAP.get(by.lower(), by)
     env.filters["to_const"] = _camel_to_const
     env.filters["lower_first"] = _lower_first
+    env.filters["upper_first"] = _upper_first
     return env
 
 

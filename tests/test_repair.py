@@ -116,3 +116,92 @@ def test_repair_at_limit_routes_to_final_report():
     from qa_framework_generator.graph import route_after_repair
     state = make_state(repair_attempts=3, max_repair_attempts=3)
     assert route_after_repair(state) == "final_report"
+
+
+# --- _find_file_by_class_name ---
+
+def test_find_file_by_class_name_finds_page():
+    from qa_framework_generator.repair import _find_file_by_class_name
+    files_map = {
+        "src/test/java/com/example/pages/HomePage.java": make_file("src/test/java/com/example/pages/HomePage.java", ""),
+        "src/test/java/com/example/tests/SmokeTest.java": make_file("src/test/java/com/example/tests/SmokeTest.java", ""),
+    }
+    assert _find_file_by_class_name("HomePage", files_map) == "src/test/java/com/example/pages/HomePage.java"
+
+
+def test_find_file_by_class_name_finds_test():
+    from qa_framework_generator.repair import _find_file_by_class_name
+    files_map = {
+        "src/test/java/com/example/pages/HomePage.java": make_file("src/test/java/com/example/pages/HomePage.java", ""),
+        "src/test/java/com/example/tests/SmokeTest.java": make_file("src/test/java/com/example/tests/SmokeTest.java", ""),
+    }
+    assert _find_file_by_class_name("SmokeTest", files_map) == "src/test/java/com/example/tests/SmokeTest.java"
+
+
+def test_find_file_by_class_name_returns_none_for_unknown():
+    from qa_framework_generator.repair import _find_file_by_class_name
+    files_map = {"src/test/java/com/example/pages/HomePage.java": make_file("HomePage.java", "")}
+    assert _find_file_by_class_name("UnknownPage", files_map) is None
+
+
+# --- _resolve_failure_path ---
+
+def test_resolve_failure_path_handles_eval_page_object():
+    from qa_framework_generator.repair import _resolve_failure_path
+    files_map = {
+        "src/test/java/com/example/pages/HomePage.java": make_file("src/test/java/com/example/pages/HomePage.java", ""),
+    }
+    result = _resolve_failure_path("eval_page_object_HomePage", files_map)
+    assert result == "src/test/java/com/example/pages/HomePage.java"
+
+
+def test_resolve_failure_path_handles_eval_test_class():
+    from qa_framework_generator.repair import _resolve_failure_path
+    files_map = {
+        "src/test/java/com/example/tests/SearchFlow.java": make_file("src/test/java/com/example/tests/SearchFlow.java", ""),
+    }
+    result = _resolve_failure_path("eval_test_class_SearchFlow", files_map)
+    assert result == "src/test/java/com/example/tests/SearchFlow.java"
+
+
+def test_resolve_failure_path_handles_standard_check():
+    from qa_framework_generator.repair import _resolve_failure_path
+    files_map = {"pom.xml": make_file("pom.xml", "", "xml")}
+    result = _resolve_failure_path("check_xml_pom.xml", files_map)
+    assert result == "pom.xml"
+
+
+def test_resolve_failure_path_returns_none_for_unknown():
+    from qa_framework_generator.repair import _resolve_failure_path
+    result = _resolve_failure_path("unknown_check_name", {})
+    assert result is None
+
+
+# --- repair_files handles eval_ failures ---
+
+def test_repair_files_calls_llm_for_eval_page_object_failure():
+    from unittest.mock import patch
+    from qa_framework_generator.repair import repair_files
+    page_file = make_file("src/test/java/com/example/pages/HomePage.java", "public class HomePage {}")
+    failure = ValidationResult(name="eval_page_object_HomePage", passed=False, output="Score: 0.3")
+    repaired = page_file.model_copy(update={"content": "// repaired"})
+
+    with patch("qa_framework_generator.repair.llm_repair_file", return_value=repaired) as mock_llm:
+        result = repair_files([page_file], [failure])
+        mock_llm.assert_called_once_with(page_file, failure)
+
+    assert result[0].content == "// repaired"
+
+
+def test_repair_files_calls_llm_for_eval_test_class_failure():
+    from unittest.mock import patch
+    from qa_framework_generator.repair import repair_files
+    test_file = make_file("src/test/java/com/example/tests/SmokeTest.java", "public class SmokeTest {}")
+    failure = ValidationResult(name="eval_test_class_SmokeTest", passed=False, output="Score: 0.4")
+    repaired = test_file.model_copy(update={"content": "// repaired"})
+
+    with patch("qa_framework_generator.repair.llm_repair_file", return_value=repaired) as mock_llm:
+        result = repair_files([test_file], [failure])
+        mock_llm.assert_called_once_with(test_file, failure)
+
+    assert result[0].content == "// repaired"

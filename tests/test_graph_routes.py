@@ -103,7 +103,55 @@ def test_graph_has_expected_nodes():
     node_names = set(graph.nodes.keys())
     expected = {
         "load_config", "requirements", "blueprint", "render_static",
-        "generate_pages", "write_files", "static_validate", "maven_validate",
-        "review", "repair", "final_report",
+        "generate_pages", "evaluate", "write_files", "static_validate",
+        "maven_validate", "review", "repair", "final_report",
     }
     assert expected.issubset(node_names)
+
+
+# --- route_after_evaluation ---
+
+def test_eval_all_pass_goes_to_write_files():
+    from qa_framework_generator.graph import route_after_evaluation
+    state = make_state(validation_results=[
+        ValidationResult(name="eval_page_object_HomePage", passed=True),
+        ValidationResult(name="eval_test_class_SmokeTest", passed=True),
+    ])
+    assert route_after_evaluation(state) == "write_files"
+
+
+def test_eval_any_fail_goes_to_repair():
+    from qa_framework_generator.graph import route_after_evaluation
+    state = make_state(validation_results=[
+        ValidationResult(name="eval_page_object_HomePage", passed=True),
+        ValidationResult(name="eval_test_class_SmokeTest", passed=False, output="Score: 0.45"),
+    ])
+    assert route_after_evaluation(state) == "repair"
+
+
+def test_eval_all_fail_goes_to_repair():
+    from qa_framework_generator.graph import route_after_evaluation
+    state = make_state(validation_results=[
+        ValidationResult(name="eval_page_object_HomePage", passed=False),
+        ValidationResult(name="eval_page_object_SearchPage", passed=False),
+    ])
+    assert route_after_evaluation(state) == "repair"
+
+
+def test_eval_empty_results_goes_to_write_files():
+    from qa_framework_generator.graph import route_after_evaluation
+    # deepeval unavailable → evaluate_generated_files returns warning with passed=True
+    state = make_state(validation_results=[
+        ValidationResult(name="eval_deepeval_unavailable", passed=True),
+    ])
+    assert route_after_evaluation(state) == "write_files"
+
+
+def test_eval_non_eval_results_ignored_in_routing():
+    from qa_framework_generator.graph import route_after_evaluation
+    # non-eval failures don't affect this routing decision
+    state = make_state(validation_results=[
+        ValidationResult(name="check_pom_xml_exists", passed=False),
+        ValidationResult(name="eval_page_object_HomePage", passed=True),
+    ])
+    assert route_after_evaluation(state) == "write_files"

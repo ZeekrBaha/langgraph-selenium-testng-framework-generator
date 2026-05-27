@@ -1,4 +1,4 @@
-# ecommerce-demo-automation
+# ecommerce-full-automation
 
 Generated Java Selenium + TestNG automation framework.
 

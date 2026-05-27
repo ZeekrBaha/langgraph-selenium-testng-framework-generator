@@ -15,19 +15,19 @@ public class {{ class_name }} extends BasePage {
     }
 
     {% for element in elements %}
-    public String get{{ element.name | capitalize }}Text() {
+    public String get{{ element.name | upper_first }}Text() {
         return getText({{ element.name | to_const }});
     }
 
-    public void click{{ element.name | capitalize }}() {
+    public void click{{ element.name | upper_first }}() {
         click({{ element.name | to_const }});
     }
 
-    public void type{{ element.name | capitalize }}(String value) {
+    public void type{{ element.name | upper_first }}(String value) {
         type({{ element.name | to_const }}, value);
     }
 
-    public boolean is{{ element.name | capitalize }}Displayed() {
+    public boolean is{{ element.name | upper_first }}Displayed() {
         return isDisplayed({{ element.name | to_const }});
     }
     {% endfor %}
