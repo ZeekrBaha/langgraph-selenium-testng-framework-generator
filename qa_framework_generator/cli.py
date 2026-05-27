@@ -62,7 +62,8 @@ def _generate_graph(config_path: str, output: str, eval_threshold: float = 0.7) 
     initial = GeneratorState(config_path=config_path, output_dir=output, eval_threshold=eval_threshold)
 
     typer.echo("Running LangGraph pipeline...")
-    final: GeneratorState = graph.invoke(initial)
+    result = graph.invoke(initial)
+    final = GeneratorState.model_validate(result)
 
     typer.echo(f"Project: {final.project_name}  |  Package: {final.target_package}")
     typer.echo(f"Output:  {final.output_dir}")

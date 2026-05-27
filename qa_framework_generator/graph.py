@@ -53,7 +53,7 @@ def final_report_node(state: GeneratorState) -> dict:
     from qa_framework_generator.file_writer import write_files
     report_content = _build_report(state)
     report_file = GeneratedFile(path="GENERATION_REPORT.md", content=report_content, kind="markdown")
-    write_files([report_file], state.output_dir, force=True)
+    write_files([report_file], state.output_dir, force=True, cleanup=False)
     return {"status": "done"}
 
 
@@ -109,7 +109,7 @@ def requirements_node(state: GeneratorState) -> dict:
     from qa_framework_generator.prompts import build_requirements_prompt
 
     llm = get_openai_chat_model()
-    structured = llm.with_structured_output(RequirementsOutput)
+    structured = llm.with_structured_output(RequirementsOutput, method="function_calling")
     prompt = build_requirements_prompt(state.config_data)
     result: RequirementsOutput = structured.invoke(prompt)
     return {"requirements": result.model_dump()}
@@ -121,7 +121,7 @@ def blueprint_node(state: GeneratorState) -> dict:
     from qa_framework_generator.prompts import build_blueprint_prompt
 
     llm = get_openai_chat_model()
-    structured = llm.with_structured_output(BlueprintOutput)
+    structured = llm.with_structured_output(BlueprintOutput, method="function_calling")
     prompt = build_blueprint_prompt(state.requirements, state.config_data)
     result: BlueprintOutput = structured.invoke(prompt)
     return {"blueprint": result.model_dump()}
@@ -142,7 +142,7 @@ def generate_pages_node(state: GeneratorState) -> dict:
 
     for page in cfg.pages:
         prompt = build_page_object_prompt(page, pkg)
-        structured = llm.with_structured_output(PageObjectOutput)
+        structured = llm.with_structured_output(PageObjectOutput, method="function_calling")
         output: PageObjectOutput = structured.invoke(prompt)
         content = render_page_object(
             class_name=output.class_name,
@@ -157,7 +157,7 @@ def generate_pages_node(state: GeneratorState) -> dict:
 
     for flow in cfg.flows:
         prompt = build_test_case_prompt(flow, cfg.pages, pkg)
-        structured = llm.with_structured_output(TestCaseOutput)
+        structured = llm.with_structured_output(TestCaseOutput, method="function_calling")
         output: TestCaseOutput = structured.invoke(prompt)
         content = render_test_class(
             class_name=output.class_name,
@@ -190,7 +190,7 @@ def review_node(state: GeneratorState) -> dict:
     from qa_framework_generator.prompts import build_review_prompt
 
     llm = get_openai_chat_model()
-    structured = llm.with_structured_output(ReviewOutput)
+    structured = llm.with_structured_output(ReviewOutput, method="function_calling")
     prompt = build_review_prompt(state.generated_files, state.validation_results)
     result: ReviewOutput = structured.invoke(prompt)
 

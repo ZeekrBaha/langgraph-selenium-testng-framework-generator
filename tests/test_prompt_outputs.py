@@ -122,17 +122,15 @@ def test_build_test_case_prompt_contains_flow_name():
 
 def test_llm_raises_without_api_key(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    import importlib
-    import qa_framework_generator.llm as llm_mod
-    importlib.reload(llm_mod)
+    monkeypatch.setattr("qa_framework_generator.llm.load_dotenv", lambda **kw: None)
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
+        import qa_framework_generator.llm as llm_mod
         llm_mod.get_openai_chat_model()
 
 
 def test_llm_raises_with_empty_api_key(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "")
-    import importlib
-    import qa_framework_generator.llm as llm_mod
-    importlib.reload(llm_mod)
+    monkeypatch.setattr("qa_framework_generator.llm.load_dotenv", lambda **kw: None)
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
+        import qa_framework_generator.llm as llm_mod
         llm_mod.get_openai_chat_model()

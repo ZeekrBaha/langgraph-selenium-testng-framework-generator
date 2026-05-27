@@ -46,6 +46,7 @@ def write_files(
     files: list[GeneratedFile],
     output_dir: str,
     force: bool = False,
+    cleanup: bool = True,
 ) -> WriteResult:
     base = Path(output_dir)
     result = WriteResult()
@@ -65,7 +66,7 @@ def write_files(
         dest.write_text(final_content, encoding="utf-8")
         result.written.append(str(dest))
 
-    if base.exists():
+    if cleanup and base.exists():
         for existing in base.rglob("*"):
             if existing.is_file() and existing.resolve() not in current_paths:
                 try:
