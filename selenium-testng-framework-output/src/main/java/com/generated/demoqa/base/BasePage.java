@@ -3,9 +3,12 @@ package com.generated.demoqa.base;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
@@ -20,12 +23,34 @@ public abstract class BasePage {
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
+    // --- Core helpers ---
+
     protected WebElement find(By locator) {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
     }
 
+    protected WebElement findClickable(By locator) {
+        return wait.until(ExpectedConditions.elementToBeClickable(locator));
+    }
+
+    protected WebElement waitForElement(By locator, int timeoutSeconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
+                .until(ExpectedConditions.visibilityOfElementLocated(locator));
+    }
+
+    protected void waitForInvisibility(By locator) {
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(locator));
+    }
+
+    // --- Interaction helpers ---
+
     protected void click(By locator) {
-        find(locator).click();
+        findClickable(locator).click();
+    }
+
+    protected void clickWithJs(By locator) {
+        WebElement el = driver.findElement(locator);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el);
     }
 
     protected void type(By locator, String text) {
@@ -34,8 +59,48 @@ public abstract class BasePage {
         el.sendKeys(text);
     }
 
+    protected void typeAndSubmit(By locator, String text) {
+        WebElement el = find(locator);
+        el.clear();
+        el.sendKeys(text, Keys.ENTER);
+    }
+
+    protected void hover(By locator) {
+        new Actions(driver).moveToElement(find(locator)).perform();
+    }
+
+    protected void dragAndDrop(By source, By target) {
+        new Actions(driver)
+                .dragAndDrop(driver.findElement(source), driver.findElement(target))
+                .perform();
+    }
+
+    // --- Select / dropdown ---
+
+    protected void selectByVisibleText(By locator, String text) {
+        new Select(find(locator)).selectByVisibleText(text);
+    }
+
+    protected void selectByValue(By locator, String value) {
+        new Select(find(locator)).selectByValue(value);
+    }
+
+    protected void selectByIndex(By locator, int index) {
+        new Select(find(locator)).selectByIndex(index);
+    }
+
+    protected String getSelectedOptionText(By locator) {
+        return new Select(find(locator)).getFirstSelectedOption().getText();
+    }
+
+    // --- Read helpers ---
+
     protected String getText(By locator) {
         return find(locator).getText();
+    }
+
+    protected String getAttribute(By locator, String attribute) {
+        return find(locator).getAttribute(attribute);
     }
 
     protected boolean isDisplayed(By locator) {
@@ -46,13 +111,35 @@ public abstract class BasePage {
         }
     }
 
+    protected boolean isEnabled(By locator) {
+        try {
+            return driver.findElement(locator).isEnabled();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    protected int countElements(By locator) {
+        return driver.findElements(locator).size();
+    }
+
+    // --- Navigation helpers ---
+
     protected void scrollIntoView(By locator) {
         WebElement el = driver.findElement(locator);
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", el);
     }
 
+    protected void scrollToBottom() {
+        ((JavascriptExecutor) driver).executeScript("window.scrollTo(0, document.body.scrollHeight);");
+    }
+
     protected void waitForUrlToContain(String fragment) {
         wait.until(ExpectedConditions.urlContains(fragment));
+    }
+
+    protected void waitForTitleToContain(String text) {
+        wait.until(ExpectedConditions.titleContains(text));
     }
 
     public String getCurrentUrl() {

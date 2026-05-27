@@ -2,6 +2,7 @@
 package com.generated.demoqa.driver;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -9,7 +10,10 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 
 public class DriverFactory {
@@ -17,36 +21,59 @@ public class DriverFactory {
     private static final ThreadLocal<WebDriver> driverThreadLocal = new ThreadLocal<>();
 
     public static void createDriver(String browser, boolean headless) {
-        WebDriver driver;
-        switch (browser.toLowerCase()) {
-            case "firefox":
-                WebDriverManager.firefoxdriver().setup();
-                FirefoxOptions ffOptions = new FirefoxOptions();
-                if (headless) {
-                    ffOptions.addArguments("--headless");
-                }
-                driver = new FirefoxDriver(ffOptions);
-                break;
-            case "edge":
-                WebDriverManager.edgedriver().setup();
-                EdgeOptions edgeOptions = new EdgeOptions();
-                if (headless) {
-                    edgeOptions.addArguments("--headless");
-                }
-                driver = new EdgeDriver(edgeOptions);
-                break;
-            default:
-                WebDriverManager.chromedriver().setup();
-                ChromeOptions chromeOptions = new ChromeOptions();
-                if (headless) {
-                    chromeOptions.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage");
-                }
-                driver = new ChromeDriver(chromeOptions);
-        }
+        String gridUrl = System.getProperty("grid.url");
+        WebDriver driver = gridUrl != null && !gridUrl.isBlank()
+                ? createRemoteDriver(browser, headless, gridUrl)
+                : createLocalDriver(browser, headless);
         driver.manage().window().maximize();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(0));
         driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
         driverThreadLocal.set(driver);
+    }
+
+    private static WebDriver createLocalDriver(String browser, boolean headless) {
+        switch (browser.toLowerCase()) {
+            case "firefox":
+                WebDriverManager.firefoxdriver().setup();
+                FirefoxOptions ffOptions = new FirefoxOptions();
+                if (headless) ffOptions.addArguments("--headless");
+                return new FirefoxDriver(ffOptions);
+            case "edge":
+                WebDriverManager.edgedriver().setup();
+                EdgeOptions edgeOptions = new EdgeOptions();
+                if (headless) edgeOptions.addArguments("--headless");
+                return new EdgeDriver(edgeOptions);
+            default:
+                WebDriverManager.chromedriver().setup();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                if (headless) chromeOptions.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage");
+                return new ChromeDriver(chromeOptions);
+        }
+    }
+
+    private static WebDriver createRemoteDriver(String browser, boolean headless, String gridUrl) {
+        MutableCapabilities caps;
+        switch (browser.toLowerCase()) {
+            case "firefox":
+                FirefoxOptions ffOpts = new FirefoxOptions();
+                if (headless) ffOpts.addArguments("--headless");
+                caps = ffOpts;
+                break;
+            case "edge":
+                EdgeOptions edgeOpts = new EdgeOptions();
+                if (headless) edgeOpts.addArguments("--headless");
+                caps = edgeOpts;
+                break;
+            default:
+                ChromeOptions chromeOpts = new ChromeOptions();
+                if (headless) chromeOpts.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage");
+                caps = chromeOpts;
+        }
+        try {
+            return new RemoteWebDriver(new URL(gridUrl), caps);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Invalid grid.url: " + gridUrl, e);
+        }
     }
 
     public static WebDriver getDriver() {
