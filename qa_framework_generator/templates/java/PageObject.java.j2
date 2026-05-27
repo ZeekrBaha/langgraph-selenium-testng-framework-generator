@@ -1,0 +1,34 @@
+package {{ base_package }}.pages;
+
+import {{ base_package }}.base.BasePage;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+
+public class {{ class_name }} extends BasePage {
+
+    {% for element in elements %}
+    private static final By {{ element.name | to_const }} = By.{{ element.by | to_by }}("{{ element.value }}");
+    {% endfor %}
+
+    public {{ class_name }}(WebDriver driver) {
+        super(driver);
+    }
+
+    {% for element in elements %}
+    public String get{{ element.name | capitalize }}Text() {
+        return getText({{ element.name | to_const }});
+    }
+
+    public void click{{ element.name | capitalize }}() {
+        click({{ element.name | to_const }});
+    }
+
+    public void type{{ element.name | capitalize }}(String value) {
+        type({{ element.name | to_const }}, value);
+    }
+
+    public boolean is{{ element.name | capitalize }}Displayed() {
+        return isDisplayed({{ element.name | to_const }});
+    }
+    {% endfor %}
+}

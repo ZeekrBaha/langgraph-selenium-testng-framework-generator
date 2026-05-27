@@ -1,0 +1,54 @@
+project_name: ecommerce-demo-automation
+package_name: com.generated.demoqa
+output_dir: selenium-testng-framework-output
+
+environments:
+  dev:
+    base_url: https://dev.example.com
+  qa:
+    base_url: https://qa.example.com
+  prod:
+    base_url: https://example.com
+
+browsers:
+  - chrome
+  - firefox
+
+headless_default: true
+
+parallel:
+  enabled: true
+  thread_count: 3
+
+pages:
+  - name: HomePage
+    path: /
+    elements:
+      - name: searchInput
+        by: css
+        value: input[type='search']
+      - name: searchButton
+        by: css
+        value: button[type='submit']
+  - name: SearchResultsPage
+    path: /search
+    elements:
+      - name: resultItems
+        by: css
+        value: "[data-automation-id='product-title']"
+
+flows:
+  - name: SmokeTest
+    groups: [smoke, regression]
+    steps:
+      - open: HomePage
+      - assert_title_contains: DemoShop
+  - name: SearchFlow
+    groups: [regression]
+    steps:
+      - open: HomePage
+      - type:
+          element: searchInput
+          value: laptop
+      - click: searchButton
+      - assert_url_contains: /search

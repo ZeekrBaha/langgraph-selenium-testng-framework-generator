@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="{{ project_name }}"
+       parallel="{{ 'classes' if parallel.enabled else 'none' }}"
+       thread-count="{{ parallel.thread_count }}">
+
+    <listeners>
+        <listener class-name="{{ base_package }}.listeners.TestListener"/>
+        <listener class-name="{{ base_package }}.listeners.ExtentReportListener"/>
+        <listener class-name="{{ base_package }}.retry.RetryTransformer"/>
+    </listeners>
+
+    <test name="Smoke">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="{{ base_package }}.tests"/>
+        </packages>
+    </test>
+
+    <test name="Regression">
+        <groups>
+            <run>
+                <include name="regression"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="{{ base_package }}.tests"/>
+        </packages>
+    </test>
+
+</suite>

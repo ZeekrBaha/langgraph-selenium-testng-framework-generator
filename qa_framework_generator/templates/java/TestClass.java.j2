@@ -1,0 +1,25 @@
+package {{ base_package }}.tests;
+
+import {{ base_package }}.base.BaseTest;
+{% for page_name in pages_used %}
+import {{ base_package }}.pages.{{ page_name }};
+{% endfor %}
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+public class {{ class_name }} extends BaseTest {
+
+    @Test(groups = { {% for g in groups %}"{{ g }}"{% if not loop.last %}, {% endif %}{% endfor %} },
+         retryAnalyzer = {{ base_package }}.retry.RetryAnalyzer.class)
+    public void {{ method_name }}() {
+        {% for page_name, var_name in page_vars %}
+        {{ page_name }} {{ var_name }} = new {{ page_name }}(driver);
+        {% endfor %}
+        {% for line in step_lines %}
+        {{ line }}
+        {% endfor %}
+        {% for assertion in assertions %}
+        {{ assertion }};
+        {% endfor %}
+    }
+}

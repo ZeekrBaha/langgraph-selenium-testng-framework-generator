@@ -1,0 +1,17 @@
+package {{ base_package }}.listeners;
+
+import org.testng.ISuite;
+import org.testng.ISuiteListener;
+
+public class ExtentReportListener implements ISuiteListener {
+
+    @Override
+    public void onStart(ISuite suite) {
+        ExtentManager.getInstance();
+    }
+
+    @Override
+    public void onFinish(ISuite suite) {
+        ExtentManager.getInstance().flush();
+    }
+}

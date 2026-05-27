@@ -1,0 +1,32 @@
+package {{ base_package }}.utils;
+
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class ScreenshotUtil {
+
+    private static final String DIR = "target/screenshots";
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+
+    public static String capture(WebDriver driver, String testName) {
+        try {
+            File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            String timestamp = LocalDateTime.now().format(FMT);
+            String filename = testName + "_" + timestamp + ".png";
+            Path dest = Paths.get(DIR, filename);
+            Files.createDirectories(dest.getParent());
+            Files.copy(src.toPath(), dest);
+            return dest.toAbsolutePath().toString();
+        } catch (Exception e) {
+            return "screenshot-failed: " + e.getMessage();
+        }
+    }
+}

@@ -1,0 +1,125 @@
+project_name: ecommerce-full-automation
+package_name: com.generated.shopqa
+output_dir: selenium-testng-framework-output
+
+environments:
+  dev:
+    base_url: https://dev.example.com
+  qa:
+    base_url: https://qa.example.com
+  prod:
+    base_url: https://example.com
+
+browsers:
+  - chrome
+  - firefox
+
+headless_default: true
+
+parallel:
+  enabled: true
+  thread_count: 3
+
+pages:
+  - name: LoginPage
+    path: /login
+    elements:
+      - name: emailInput
+        by: css
+        value: input[type='email']
+      - name: passwordInput
+        by: css
+        value: input[type='password']
+      - name: loginButton
+        by: css
+        value: button[type='submit']
+      - name: errorMessage
+        by: css
+        value: "[data-testid='error-msg']"
+
+  - name: HomePage
+    path: /
+    elements:
+      - name: searchInput
+        by: css
+        value: input[type='search']
+      - name: searchButton
+        by: css
+        value: button[type='submit']
+      - name: userMenu
+        by: css
+        value: "[data-testid='user-menu']"
+
+  - name: SearchResultsPage
+    path: /search
+    elements:
+      - name: resultItems
+        by: css
+        value: "[data-testid='product-card']"
+      - name: firstResult
+        by: css
+        value: "[data-testid='product-card']:first-child"
+      - name: sortDropdown
+        by: css
+        value: select[name='sort']
+
+  - name: ProductPage
+    path: /product
+    elements:
+      - name: productTitle
+        by: css
+        value: h1[data-testid='product-title']
+      - name: addToCartButton
+        by: css
+        value: button[data-testid='add-to-cart']
+      - name: quantity
+        by: css
+        value: input[data-testid='quantity']
+
+  - name: CartPage
+    path: /cart
+    elements:
+      - name: cartItems
+        by: css
+        value: "[data-testid='cart-item']"
+      - name: totalPrice
+        by: css
+        value: "[data-testid='cart-total']"
+      - name: checkoutButton
+        by: css
+        value: button[data-testid='checkout']
+
+flows:
+  - name: LoginSmokeTest
+    groups: [smoke]
+    steps:
+      - open: LoginPage
+      - type:
+          element: emailInput
+          value: testuser@example.com
+      - type:
+          element: passwordInput
+          value: TestPassword123
+      - click: loginButton
+      - assert_url_contains: /home
+
+  - name: SearchAndAddToCartTest
+    groups: [regression]
+    steps:
+      - open: HomePage
+      - type:
+          element: searchInput
+          value: laptop
+      - click: searchButton
+      - assert_url_contains: /search
+      - click: firstResult
+      - click: addToCartButton
+      - assert_url_contains: /cart
+
+  - name: CartCheckoutTest
+    groups: [regression]
+    steps:
+      - open: CartPage
+      - assert_title_contains: Cart
+      - click: checkoutButton
+      - assert_url_contains: /checkout

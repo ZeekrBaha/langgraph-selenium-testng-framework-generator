@@ -1,0 +1,16 @@
+project_name: minimal-e2e-test
+package_name: com.test.minimalqa
+output_dir: selenium-testng-framework-output
+
+environments:
+  qa:
+    base_url: https://example.com
+
+browsers:
+  - chrome
+
+headless_default: true
+
+parallel:
+  enabled: false
+  thread_count: 1

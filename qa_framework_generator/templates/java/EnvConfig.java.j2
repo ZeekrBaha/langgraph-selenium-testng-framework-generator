@@ -1,0 +1,14 @@
+package {{ base_package }}.config;
+
+public class EnvConfig {
+
+    private final String baseUrl;
+
+    public EnvConfig(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+}

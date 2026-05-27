@@ -1,0 +1,37 @@
+package {{ base_package }}.config;
+
+import java.io.InputStream;
+import java.util.Properties;
+
+public class ConfigLoader {
+
+    private static Properties props = new Properties();
+
+    public static void load(String env) {
+        String file = "env/" + env + ".properties";
+        try (InputStream is = ConfigLoader.class.getClassLoader().getResourceAsStream(file)) {
+            if (is == null) {
+                throw new RuntimeException("Environment config not found: " + file);
+            }
+            props.load(is);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load config for env: " + env, e);
+        }
+    }
+
+    public static String getBaseUrl() {
+        return get("base.url");
+    }
+
+    public static String get(String key) {
+        String value = props.getProperty(key);
+        if (value == null) {
+            throw new RuntimeException("Missing config key: " + key);
+        }
+        return value;
+    }
+
+    public static String get(String key, String defaultValue) {
+        return props.getProperty(key, defaultValue);
+    }
+}
