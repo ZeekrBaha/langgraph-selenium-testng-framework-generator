@@ -54,6 +54,14 @@ def llm_repair_file(
     return file.model_copy(update={"content": corrected})
 
 
+def _find_file_by_class_name(class_name: str, files_map: dict[str, "GeneratedFile"]) -> str | None:
+    for suffix in (f"pages/{class_name}.java", f"tests/{class_name}.java"):
+        for path in files_map:
+            if path.endswith(suffix):
+                return path
+    return None
+
+
 def repair_files(
     files: list[GeneratedFile],
     failures: list[ValidationResult],
@@ -67,12 +75,20 @@ def repair_files(
     fixed_map = {f.path: f for f in fixed}
 
     for failure in non_deterministic:
-        affected_path = _failure_to_path(failure.name)
+        affected_path = _resolve_failure_path(failure.name, fixed_map)
         if affected_path and affected_path in fixed_map:
             repaired = llm_repair_file(fixed_map[affected_path], failure)
             fixed_map[affected_path] = repaired
 
     return list(fixed_map.values())
+
+
+def _resolve_failure_path(check_name: str, files_map: dict[str, "GeneratedFile"]) -> str | None:
+    for eval_prefix in ("eval_page_object_", "eval_test_class_"):
+        if check_name.startswith(eval_prefix):
+            class_name = check_name[len(eval_prefix):]
+            return _find_file_by_class_name(class_name, files_map)
+    return _failure_to_path(check_name)
 
 
 def _failure_to_path(check_name: str) -> str | None:

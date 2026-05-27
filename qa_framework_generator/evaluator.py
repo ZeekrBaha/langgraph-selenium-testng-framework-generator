@@ -93,7 +93,11 @@ def evaluate_generated_files(
     threshold: float = _DEFAULT_THRESHOLD,
 ) -> list[ValidationResult]:
     if not _DEEPEVAL_AVAILABLE:
-        return []
+        return [ValidationResult(
+            name="eval_deepeval_unavailable",
+            passed=True,
+            output="deepeval not installed — quality evaluation skipped (pip install deepeval)",
+        )]
 
     pages = config_data.get("pages") or []
     flows = config_data.get("flows") or []

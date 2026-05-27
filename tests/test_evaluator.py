@@ -165,6 +165,31 @@ def test_evaluate_skips_non_page_non_test_files():
     assert results[0].name.startswith("eval_page_object")
 
 
+# --- deepeval unavailable ---
+
+def test_evaluate_returns_warning_when_deepeval_unavailable(monkeypatch):
+    import qa_framework_generator.evaluator as ev_mod
+    monkeypatch.setattr(ev_mod, "_DEEPEVAL_AVAILABLE", False)
+    from qa_framework_generator.evaluator import evaluate_generated_files
+    results = evaluate_generated_files([], {})
+    assert len(results) == 1
+    assert results[0].name == "eval_deepeval_unavailable"
+    assert results[0].passed is True
+    assert "deepeval" in results[0].output.lower()
+
+
+def test_evaluate_warning_does_not_block_routing(monkeypatch):
+    import qa_framework_generator.evaluator as ev_mod
+    monkeypatch.setattr(ev_mod, "_DEEPEVAL_AVAILABLE", False)
+    from qa_framework_generator.graph import route_after_evaluation
+    from qa_framework_generator.state import GeneratorState
+    from qa_framework_generator.evaluator import evaluate_generated_files
+
+    results = evaluate_generated_files([], {})
+    state = GeneratorState(validation_results=results)
+    assert route_after_evaluation(state) == "write_files"
+
+
 # --- graph routing ---
 
 def test_route_after_evaluation_passes():
