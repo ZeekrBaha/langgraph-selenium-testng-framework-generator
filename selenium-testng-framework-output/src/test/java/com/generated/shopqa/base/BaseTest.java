@@ -13,7 +13,7 @@ public abstract class BaseTest {
 
     protected WebDriver driver;
 
-    @BeforeMethod
+    @BeforeMethod(alwaysRun = true)
     public void setUp() {
         String browser = System.getProperty("browser", "chrome");
         boolean headless = Boolean.parseBoolean(System.getProperty("headless", "true"));
@@ -25,7 +25,7 @@ public abstract class BaseTest {
         driver.get(ConfigLoader.getBaseUrl());
     }
 
-    @AfterMethod
+    @AfterMethod(alwaysRun = true)
     public void tearDown(ITestResult result) {
         if (result.getStatus() == ITestResult.FAILURE) {
             ScreenshotUtil.capture(driver, result.getName());
