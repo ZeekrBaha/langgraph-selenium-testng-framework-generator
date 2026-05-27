@@ -12,7 +12,7 @@ You describe your target application (pages, flows, environments, browsers). The
 |---|---|
 | `pom.xml` | Maven build with locked dependency versions and Surefire config |
 | `DriverFactory.java` | Thread-safe `ThreadLocal<WebDriver>` for Chrome, Firefox, Edge, headless, and **Selenium Grid** |
-| `BaseTest.java` | TestNG lifecycle: setup, teardown, environment loading, listener registration, `getCurrentUrl()` / `getTitle()` helpers |
+| `BaseTest.java` | TestNG lifecycle: `@BeforeMethod(alwaysRun=true)` setup, `@AfterMethod(alwaysRun=true)` teardown, environment loading, listener registration, `getCurrentUrl()` / `getTitle()` helpers |
 | `BasePage.java` | Explicit waits, hover, drag-drop, dropdown, typeAndSubmit, scrollToBottom, countElements |
 | `ConfigLoader.java` | Environment switcher — `mvn test -Denv=qa` selects QA base URLs |
 | `RetryAnalyzer.java` | Automatic retry for flaky tests with configurable attempt count |
@@ -512,6 +512,7 @@ No code changes required — the same generated framework runs locally or on any
 - [x] **BaseTest driver helpers** — `getCurrentUrl()`, `getTitle()`, `getPageSource()` added to `BaseTest` so generated assertions like `getCurrentUrl().contains(...)` compile without raw `driver.` prefix
 - [x] **`final_report_node` honest status** — returns `"failed"` when validation failures remain after repair exhaustion; previously always returned `"done"`
 - [x] **Maven failure repair** — `_files_from_maven_error()` parses `[ERROR] /path/to/File.java:[n,m]` lines to find affected files; falls back to all test Java files; repair loop now actually fixes compilation errors
+- [x] **`alwaysRun = true` on `@BeforeMethod` / `@AfterMethod`** — without this flag TestNG skips setup/teardown when running with `-Dgroups=smoke`, leaving `driver` null; adding `alwaysRun = true` guarantees lifecycle methods always execute regardless of group filter
 - [x] **175 Python unit tests passing** (+12 new: cross-ref validator ×6, final-report status ×3, maven repair ×3)
 
 ---
